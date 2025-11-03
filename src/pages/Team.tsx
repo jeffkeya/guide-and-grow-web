@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Mail, Linkedin, Award, GraduationCap, Heart } from "lucide-react";
 
+
 const Team = () => {
   const founder = {
     name: "Japheth Billy",
     role: "Founder & Social Work Professional",
     credentials: "Bachelor of Arts in Sociology & Social Work (Maasai Mara University)",
-    image: "/placeholder.svg",
+    image: "/founder.jpg",
     bio: "Japheth Billy is a dedicated social work professional based in Narok County, Kenya. A graduate of Maasai Mara University with a Bachelor of Arts in Sociology and Social Work, Japheth brings comprehensive expertise in community development, counseling, and social welfare. With strong analytical abilities and excellent interpersonal skills, Japheth founded ThriveSpace to provide accessible mental health and social work services that address the unique needs of individuals and communities. Passionate about advocacy and client-centered care, Japheth is committed to creating positive change through professional, compassionate support.",
     specializations: [
       "Community Development",
@@ -113,8 +114,9 @@ const Team = () => {
               <Card className="border-0 shadow-elegant hover-lift overflow-hidden animate-fade-in">
                 <div className="grid md:grid-cols-5 gap-8">
                   <div className="md:col-span-2 bg-gradient-to-br from-primary/10 to-secondary/10 p-8 flex flex-col items-center justify-center">
-                    <div className="w-48 h-48 rounded-full bg-primary/20 mb-6 flex items-center justify-center">
-                      <Heart className="h-24 w-24 text-primary" />
+                    <div className="w-48 h-48 rounded-full bg-primary/20 mb-6 flex items-center justify-center relative overflow-hidden">
+                    
+                      <img className="absolute inset-0 w-full h-full rounded-full object-cover" src={founder.image} alt={founder.name} />
                     </div>
                     <h3 className="text-2xl font-bold text-center mb-2">{founder.name}</h3>
                     <p className="text-primary font-semibold mb-1">{founder.role}</p>
