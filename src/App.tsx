@@ -9,6 +9,7 @@ import Team from "./pages/Team";
 import Resources from "./pages/Resources";
 import FAQs from "./pages/FAQs";
 import Contact from "./pages/Contact";
+import Appointments from "./pages/Appointments";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Login from "./pages/Login";
@@ -40,6 +41,7 @@ const App = () => (
         <Route path="/resources" element={<Resources />} />
         <Route path="/faqs" element={<FAQs />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/appointments" element={<Appointments />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/login" element={<Login />} />
