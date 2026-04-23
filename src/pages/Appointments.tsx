@@ -2,7 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, Clock3, MapPin, NotebookText, RefreshCcw, ShieldCheck, Trash2, Video } from "lucide-react";
+import {
+  CalendarIcon,
+  Clock3,
+  MapPin,
+  NotebookText,
+  RefreshCcw,
+  ShieldCheck,
+  Trash2,
+  Video,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -28,6 +37,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +56,9 @@ import { cn } from "@/lib/utils";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Appointment = Tables<"appointments">;
+type ActivityLog = Tables<"activity_logs">;
+
+const PAGE_SIZE = 4;
 
 const rescheduleSchema = z
   .object({
@@ -62,11 +82,7 @@ const rescheduleSchema = z
   );
 
 const cancelSchema = z.object({
-  reason: z
-    .string()
-    .trim()
-    .min(10, "Please share a short reason so the care team can assist you.")
-    .max(300, "Keep the cancellation reason under 300 characters."),
+  reason: z.string().trim().min(10, "Please share a short reason so the care team can assist you.").max(300),
 });
 
 const appointmentStatusLabel: Record<string, string> = {
@@ -88,9 +104,14 @@ const Appointments = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+  const [page, setPage] = useState(1);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  const totalPages = Math.max(1, Math.ceil(totalAppointments / PAGE_SIZE));
 
   const rescheduleForm = useForm<z.infer<typeof rescheduleSchema>>({
     resolver: zodResolver(rescheduleSchema),
@@ -104,30 +125,43 @@ const Appointments = () => {
 
   const cancelForm = useForm<z.infer<typeof cancelSchema>>({
     resolver: zodResolver(cancelSchema),
-    defaultValues: {
-      reason: "",
-    },
+    defaultValues: { reason: "" },
   });
 
-  const loadAppointments = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select("*")
-      .eq("user_id", userId)
-      .in("status", ["scheduled", "rescheduled"])
-      .gte("scheduled_for", new Date().toISOString())
-      .order("scheduled_for", { ascending: true });
+  const loadAppointments = async (userId: string, currentPage: number) => {
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-    if (error) {
-      toast({
-        title: "Unable to load appointments",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
+    const [appointmentsResult, activityResult] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+        .in("status", ["scheduled", "rescheduled"])
+        .gte("scheduled_for", new Date().toISOString())
+        .order("scheduled_for", { ascending: true })
+        .range(from, to),
+      supabase
+        .from("activity_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .in("entity_type", ["appointment", "journal_entry"])
+        .order("created_at", { ascending: false })
+        .limit(8),
+    ]);
+
+    if (appointmentsResult.error) {
+      toast({ title: "Unable to load appointments", description: appointmentsResult.error.message, variant: "destructive" });
+    } else {
+      setAppointments(appointmentsResult.data ?? []);
+      setTotalAppointments(appointmentsResult.count ?? 0);
     }
 
-    setAppointments(data ?? []);
+    if (activityResult.error) {
+      toast({ title: "Unable to load activity", description: activityResult.error.message, variant: "destructive" });
+    } else {
+      setActivityLogs(activityResult.data ?? []);
+    }
   };
 
   useEffect(() => {
@@ -141,7 +175,7 @@ const Appointments = () => {
       }
 
       setUser(session.user);
-      void loadAppointments(session.user.id);
+      void loadAppointments(session.user.id, page);
     });
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -152,23 +186,22 @@ const Appointments = () => {
       }
 
       setUser(session.user);
-      await loadAppointments(session.user.id);
+      await loadAppointments(session.user.id, page);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, page]);
 
   const nextAppointment = useMemo(() => appointments[0] ?? null, [appointments]);
 
   const openReschedule = (appointment: Appointment) => {
     const scheduledDate = new Date(appointment.scheduled_for);
-    const initialTime = format(scheduledDate, "HH:mm");
 
     setSelectedAppointment(appointment);
     rescheduleForm.reset({
       date: scheduledDate,
-      time: initialTime,
+      time: format(scheduledDate, "HH:mm"),
       sessionMode: ["virtual", "in-person", "phone"].includes(appointment.session_mode)
         ? (appointment.session_mode as "virtual" | "in-person" | "phone")
         : "virtual",
@@ -184,6 +217,11 @@ const Appointments = () => {
     setCancelOpen(true);
   };
 
+  const refreshCurrentPage = async () => {
+    if (!user) return;
+    await loadAppointments(user.id, page);
+  };
+
   const handleReschedule = async (values: z.infer<typeof rescheduleSchema>) => {
     if (!selectedAppointment || !user) return;
 
@@ -192,7 +230,6 @@ const Appointments = () => {
     scheduledFor.setHours(hours, minutes, 0, 0);
 
     setSaving(true);
-
     const { error } = await supabase.functions.invoke("manage-appointment", {
       body: {
         action: "reschedule",
@@ -203,33 +240,23 @@ const Appointments = () => {
         notes: values.notes?.trim() || null,
       },
     });
-
     setSaving(false);
 
     if (error) {
-      toast({
-        title: "Reschedule failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Reschedule failed", description: error.message, variant: "destructive" });
       return;
     }
 
-    toast({
-      title: "Appointment updated",
-      description: "Your session has been rescheduled successfully.",
-    });
-
+    toast({ title: "Appointment updated", description: "Your session has been rescheduled successfully." });
     setRescheduleOpen(false);
     setSelectedAppointment(null);
-    await loadAppointments(user.id);
+    await refreshCurrentPage();
   };
 
   const handleCancel = async (values: z.infer<typeof cancelSchema>) => {
     if (!selectedAppointment || !user) return;
 
     setSaving(true);
-
     const { error } = await supabase.functions.invoke("manage-appointment", {
       body: {
         action: "cancel",
@@ -237,26 +264,23 @@ const Appointments = () => {
         cancellationReason: values.reason,
       },
     });
-
     setSaving(false);
 
     if (error) {
-      toast({
-        title: "Cancellation failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Cancellation failed", description: error.message, variant: "destructive" });
       return;
     }
 
-    toast({
-      title: "Appointment cancelled",
-      description: "Your upcoming session has been cancelled.",
-    });
-
+    toast({ title: "Appointment cancelled", description: "Your upcoming session has been cancelled." });
     setCancelOpen(false);
     setSelectedAppointment(null);
-    await loadAppointments(user.id);
+
+    if (appointments.length === 1 && page > 1) {
+      setPage((current) => current - 1);
+      return;
+    }
+
+    await refreshCurrentPage();
   };
 
   if (loading) {
@@ -322,11 +346,11 @@ const Appointments = () => {
           </Card>
         </section>
 
-        <section>
+        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Card className="border-0 shadow-card">
             <CardHeader>
               <CardTitle>Upcoming appointments</CardTitle>
-              <CardDescription>Only future scheduled sessions appear here.</CardDescription>
+              <CardDescription>Page {page} of {totalPages} · {totalAppointments} upcoming sessions</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {appointments.length === 0 ? (
@@ -371,16 +395,9 @@ const Appointments = () => {
                           </div>
                         </div>
 
-                        {appointment.location && (
-                          <p className="text-sm text-muted-foreground">Location: {appointment.location}</p>
-                        )}
+                        {appointment.location && <p className="text-sm text-muted-foreground">Location: {appointment.location}</p>}
                         {appointment.meeting_link && (
-                          <a
-                            href={appointment.meeting_link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex text-sm text-primary hover:underline"
-                          >
+                          <a href={appointment.meeting_link} target="_blank" rel="noreferrer" className="inline-flex text-sm text-primary hover:underline">
                             Open meeting link
                           </a>
                         )}
@@ -406,6 +423,72 @@ const Appointments = () => {
                   );
                 })
               )}
+
+              {totalAppointments > PAGE_SIZE && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (page > 1) setPage(page - 1);
+                        }}
+                        className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          isActive={pageNumber === page}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setPage(pageNumber);
+                          }}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (page < totalPages) setPage(page + 1);
+                        }}
+                        className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-card">
+            <CardHeader>
+              <CardTitle>Audit activity log</CardTitle>
+              <CardDescription>Recent journal and appointment actions on your account.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {activityLogs.length === 0 ? (
+                <div className="rounded-lg bg-accent/20 p-4">
+                  <p className="font-medium text-foreground">No recent activity</p>
+                  <p className="text-sm text-muted-foreground mt-1">Appointment changes and journal saves will appear here.</p>
+                </div>
+              ) : (
+                activityLogs.map((log) => (
+                  <div key={log.id} className="rounded-lg border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">{log.description}</p>
+                      <Badge variant="outline">{log.entity_type.replace("_", " ")}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">{format(new Date(log.created_at), "MMM d, yyyy · h:mm a")}</p>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </section>
@@ -428,10 +511,7 @@ const Appointments = () => {
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
-                            >
+                            <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                             </Button>
