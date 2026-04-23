@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           cancellation_reason: string | null
@@ -66,6 +99,45 @@ export type Database = {
           session_mode?: string
           status?: string
           therapist_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          anxiety_level: number | null
+          content: string
+          created_at: string
+          energy_level: number | null
+          entry_date: string
+          id: string
+          mood: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anxiety_level?: number | null
+          content: string
+          created_at?: string
+          energy_level?: number | null
+          entry_date?: string
+          id?: string
+          mood: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anxiety_level?: number | null
+          content?: string
+          created_at?: string
+          energy_level?: number | null
+          entry_date?: string
+          id?: string
+          mood?: number
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
