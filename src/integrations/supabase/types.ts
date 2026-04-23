@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          cancellation_reason: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          location: string | null
+          meeting_link: string | null
+          notes: string | null
+          reminder_enabled: boolean
+          rescheduled_from: string | null
+          scheduled_for: string
+          service_type: string
+          session_mode: string
+          status: string
+          therapist_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          meeting_link?: string | null
+          notes?: string | null
+          reminder_enabled?: boolean
+          rescheduled_from?: string | null
+          scheduled_for: string
+          service_type: string
+          session_mode?: string
+          status?: string
+          therapist_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          meeting_link?: string | null
+          notes?: string | null
+          reminder_enabled?: boolean
+          rescheduled_from?: string | null
+          scheduled_for?: string
+          service_type?: string
+          session_mode?: string
+          status?: string
+          therapist_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
