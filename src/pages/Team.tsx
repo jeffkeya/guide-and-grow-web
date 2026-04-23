@@ -12,7 +12,7 @@ const Team = () => {
   const founder = {
     name: "Japheth Billy",
     role: "Founder & Social Work Professional",
-    credentials: "Bachelor of Arts in Sociology & Social Work (Maasai Mara University)",
+    credentials: "Bachelor of Arts in  Social Work (Maasai Mara University)",
     image: "/founder.jpg",
     bio: "Japheth Billy is a dedicated social work professional based in Narok County, Kenya. A graduate of Maasai Mara University with a Bachelor of Arts in Sociology and Social Work, Japheth brings comprehensive expertise in community development, counseling, and social welfare. With strong analytical abilities and excellent interpersonal skills, Japheth founded ThriveSpace to provide accessible mental health and social work services that address the unique needs of individuals and communities. Passionate about advocacy and client-centered care, Japheth is committed to creating positive change through professional, compassionate support.",
     specializations: [
