@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import type { User } from "@supabase/supabase-js";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Home, LogOut, LogIn } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { Home, LayoutDashboard, LogOut, LogIn } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,9 +134,19 @@ const Header = () => {
                   className="hidden sm:inline-flex"
                   asChild
                 >
+                  <Link to="/dashboard">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-flex"
+                  asChild
+                >
                   <Link to="/contact">
-                    <span className="hidden sm:inline">Book Session</span>
-                    <span className="sm:hidden">Book</span>
+                    Book Session
                   </Link>
                 </Button>
                 <Button
@@ -236,8 +246,14 @@ const Header = () => {
                   </Link>
                   {user ? (
                     <>
-                      <Button className="bg-gradient-primary hover:opacity-90 mt-6">
-                        Book Consultation
+                      <Button className="bg-gradient-primary hover:opacity-90 mt-6" asChild>
+                        <Link to="/dashboard">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          Dashboard
+                        </Link>
+                      </Button>
+                      <Button variant="outline" className="mt-2" asChild>
+                        <Link to="/contact">Book Consultation</Link>
                       </Button>
                       <Button
                         variant="outline"
