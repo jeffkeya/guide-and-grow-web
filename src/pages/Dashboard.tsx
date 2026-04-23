@@ -99,6 +99,13 @@ const carePlanSteps = [
 
 const supportLinks = [
   {
+    title: "Manage appointments",
+    description: "Review your confirmed sessions, move a booking, or cancel when plans change.",
+    icon: Calendar,
+    action: "View appointments",
+    route: "/appointments",
+  },
+  {
     title: "Book a consultation",
     description: "Schedule a therapy session or wellbeing check-in.",
     icon: Calendar,
@@ -190,13 +197,13 @@ const Dashboard = () => {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button size="lg" asChild>
-                  <a href="/contact">
-                    Book consultation
+                  <a href="/appointments">
+                    Manage appointments
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <a href="/resources">Explore resources</a>
+                  <a href="/contact">Book consultation</a>
                 </Button>
               </div>
             </CardContent>
