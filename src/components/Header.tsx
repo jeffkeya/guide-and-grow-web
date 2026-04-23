@@ -117,6 +117,11 @@ const Header = () => {
             <Link to="/resources" className="text-foreground hover:text-primary transition-colors font-medium">
               Resources
             </Link>
+            {user && (
+              <Link to="/appointments" className="text-foreground hover:text-primary transition-colors font-medium">
+                Appointments
+              </Link>
+            )}
             <Link to="/faqs" className="text-foreground hover:text-primary transition-colors font-medium">
               FAQs
             </Link>
@@ -238,6 +243,11 @@ const Header = () => {
                   <Link to="/resources" className="text-lg text-foreground hover:text-primary transition-colors">
                     Resources
                   </Link>
+                  {user && (
+                    <Link to="/appointments" className="text-lg text-foreground hover:text-primary transition-colors">
+                      Appointments
+                    </Link>
+                  )}
                   <Link to="/faqs" className="text-lg text-foreground hover:text-primary transition-colors">
                     FAQs
                   </Link>
